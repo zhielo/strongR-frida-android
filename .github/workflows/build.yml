@@ -52,9 +52,19 @@ jobs:
         do
           name=$(basename $path)
           real=$(realpath $path)
-          echo "Apply patches in $real to frida/subprojects/$name"
+          echo "=== Apply patches in $real to frida/subprojects/$name ==="
           cd subprojects/$name
-          git am ../../../Patchs/strongR-frida/$name/*.patch
+          for p in ../../../Patchs/strongR-frida/$name/*.patch; do
+            echo "--- Applying $(basename $p) (3-way) ---"
+            if git am -3 "$p"; then
+              echo "OK: $(basename $p) applied"
+            else
+              echo "CONFLICT: $(basename $p) could not be merged -- skipping this one patch"
+              git am --abort || true
+            fi
+          done
+          echo "Patch log for $name:"
+          git log --oneline -10
           cd ../..
         done
         cd ..
